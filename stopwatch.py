@@ -61,6 +61,7 @@ def reset():
     counter = 0 
     stopcounter = 0
     points = 0
+    timer.stop()
     scoreboard = "SCORE : " + str(points) + "/" + str(stopcounter)
 
 def score():
