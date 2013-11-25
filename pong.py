@@ -134,8 +134,14 @@ def keydown(key):
 def keyup(key):
     """ stops motion of paddle whren key is no longer pressed """
     global paddle1_vel, paddle2_vel
-    paddle1_vel = 0
-    paddle2_vel = 0
+    if key == simplegui.KEY_MAP["w"]:
+        paddle1_vel = 0
+    elif key == simplegui.KEY_MAP["s"]:
+        paddle1_vel = 0
+    elif key == simplegui.KEY_MAP["up"]:
+        paddle2_vel = 0      
+    elif key == simplegui.KEY_MAP["down"]:
+        paddle2_vel = 0
 
 
 # create frame
