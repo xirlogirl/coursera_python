@@ -15,7 +15,7 @@ rock_group = set()
 explosion_group = set()
 num_lives = 3
 num_collisions = 0
-
+game_started = False
 
 
 class ImageInfo:
@@ -105,7 +105,7 @@ def process_sprite_group(group, canvas):
             
 # helper function for single object collision with group            
 def group_collide(group, another_object):
-    global num_lives, explosion_group
+    global num_lives, explosion_group, score 
     num_collisions = 0
     collided = set()
     for sprite in group:
@@ -115,6 +115,9 @@ def group_collide(group, another_object):
             an_explosion = Sprite([sprite.pos[0], sprite.pos[1]], [0, 0], 0, 0, explosion_image, explosion_info, explosion_sound)
             explosion_group.add(an_explosion)
             num_lives -= 1
+            if num_lives == 0:
+                game_over()
+                print 'Game over'
             
     group.difference_update(collided) 
     return num_collisions
@@ -127,9 +130,16 @@ def group_group_collide(group1, group2):
         if group_collide(group2, sprite): 
             collided.add(sprite)
             score += 1
-            
+            print 'did this happen'
     group1.difference_update(collided)     
     return score
+
+def game_over():
+    global game_started, score
+    score = 0
+    reset_game()
+    game_started = False
+    soundtrack.rewind()
     
 # Ship class
 class Ship:
@@ -233,7 +243,7 @@ class Sprite:
           
            
 def draw(canvas):
-    global time, score   
+    global time, score, game_started   
     # animate background
     time += 1
     wtime = (time / 4) % WIDTH
@@ -243,15 +253,20 @@ def draw(canvas):
     canvas.draw_image(debris_image, center, size, (wtime - WIDTH / 2, HEIGHT / 2), (WIDTH, HEIGHT))
     canvas.draw_image(debris_image, center, size, (wtime + WIDTH / 2, HEIGHT / 2), (WIDTH, HEIGHT))
 
-    # draw ship and sprites
-    my_ship.draw(canvas)
-    process_sprite_group(rock_group, canvas)       
-    process_sprite_group(missile_group, canvas)
-    process_sprite_group(explosion_group, canvas)
+    # Always draw ship
+    my_ship.draw(canvas) 
     
-    group_collide(rock_group, my_ship) 
-    group_group_collide(rock_group, missile_group)
-    
+    # draw game interactable sprites
+    if game_started:               
+        process_sprite_group(rock_group, canvas)       
+        process_sprite_group(missile_group, canvas)
+        process_sprite_group(explosion_group, canvas)
+        group_collide(rock_group, my_ship) 
+        group_group_collide(rock_group, missile_group)
+    else:
+        # Display splash screen        
+        canvas.draw_image(splash_image, splash_info.get_center(), splash_info.get_size(), [WIDTH / 2, HEIGHT / 2], splash_info.get_size())
+       
     # update ship and sprites
     my_ship.update()
     
@@ -266,10 +281,11 @@ def draw(canvas):
             
 # timer handler that spawns a rock    
 def rock_spawner():
-    global a_rock, rock_group
-    while len(rock_group) < 10:
-        a_rock = Sprite([random.randrange(0, 801), random.randrange(0, 601)], [random.randrange(-2, 3), random.randrange(-2, 3)], random.randrange(-1, 2), random.randrange(-1, 2), asteroid_image, asteroid_info)
-        rock_group.add(a_rock)
+    global a_rock, rock_group # game_started
+    if game_started:
+        while len(rock_group) < 10:
+            a_rock = Sprite([random.randrange(0, 801), random.randrange(0, 601)], [random.randrange(-2, 3), random.randrange(-2, 3)], random.randrange(-1, 2), random.randrange(-1, 2), asteroid_image, asteroid_info)
+            rock_group.add(a_rock)
 
         
 # key down handler
@@ -311,7 +327,22 @@ def keep_onscreen(pos):
     elif pos[1] < 0:
         pos[1] = pos[1] + HEIGHT
     return pos        
-        
+
+def reset_game():
+    global num_lives, score, rock_group, missile_group, explosion_group
+    explosion_group = set()
+    rock_group = set()
+    missile_group = set()
+    num_lives = 3
+    score = 0
+    soundtrack.play()
+    
+# Begin game on mouse click
+def click(pos):
+    global game_started
+    game_started = True
+    print 'Game should start'
+    reset_game()
         
 # initialize frame
 frame = simplegui.create_frame("Asteroids", WIDTH, HEIGHT)
@@ -325,10 +356,11 @@ a_rock = Sprite([WIDTH / 3, HEIGHT / 3], [1, 1], 0, 0, asteroid_image, asteroid_
 frame.set_draw_handler(draw)
 frame.set_keydown_handler(keydown)
 frame.set_keyup_handler(keyup)
+frame.set_mouseclick_handler(click)
 timer = simplegui.create_timer(1000.0, rock_spawner)
 
 
 # get things rolling
 timer.start()
 frame.start()
-#soundtrack.play()
+
