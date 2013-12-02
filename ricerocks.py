@@ -294,7 +294,6 @@ def rock_spawner():
             if dist(my_ship.pos, rock_pos) > my_ship.radius + asteroid_info.radius + 100:
                 difficulty = (0.5 + 0.5 * score // 100)
                 a_rock = Sprite(rock_pos, [difficulty * random.randrange(-1, 2), difficulty * random.randrange(-1, 2)], random.randrange(-1, 2), random.randrange(-1, 2), asteroid_image, asteroid_info)
-                print a_rock.vel
                 rock_group.add(a_rock)
 
         
