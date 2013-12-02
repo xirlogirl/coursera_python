@@ -114,10 +114,10 @@ def group_collide(group, another_object):
             collided.add(sprite)
             an_explosion = Sprite([sprite.pos[0], sprite.pos[1]], [0, 0], 0, 0, explosion_image, explosion_info, explosion_sound)
             explosion_group.add(an_explosion)
-            num_lives -= 1
-            if num_lives == 0:
-                game_over()
-                print 'Game over'
+            #num_lives -= 1
+            #if num_lives == 0:
+            #    game_over()
+            #    print 'Game over'
             
     group.difference_update(collided) 
     return num_collisions
@@ -127,10 +127,9 @@ def group_group_collide(group1, group2):
     global score
     collided = set()
     for sprite in group1:
-        if group_collide(group2, sprite): 
+        if group_collide(group2, sprite) and game_started: 
             collided.add(sprite)
-            score += 1
-            print 'did this happen'
+            score += 10
     group1.difference_update(collided)     
     return score
 
@@ -243,7 +242,7 @@ class Sprite:
           
            
 def draw(canvas):
-    global time, score, game_started   
+    global time, score, game_started, num_lives   
     # animate background
     time += 1
     wtime = (time / 4) % WIDTH
@@ -261,8 +260,13 @@ def draw(canvas):
         process_sprite_group(rock_group, canvas)       
         process_sprite_group(missile_group, canvas)
         process_sprite_group(explosion_group, canvas)
-        group_collide(rock_group, my_ship) 
         group_group_collide(rock_group, missile_group)
+        if group_collide(rock_group, my_ship) > 0:
+            num_lives -= 1
+        if num_lives == 0:
+            game_started = False
+            game_over()    
+
     else:
         # Display splash screen        
         canvas.draw_image(splash_image, splash_info.get_center(), splash_info.get_size(), [WIDTH / 2, HEIGHT / 2], splash_info.get_size())
@@ -271,9 +275,10 @@ def draw(canvas):
     my_ship.update()
     
 
+    
     # Draw User info
-    canvas.draw_text('Lives: ' + str(num_lives), (20, 40), 25, 'White', 'sans-serif')
-    canvas.draw_text('Score: ' + str(score), (WIDTH - 115 , 40), 25, 'White', 'sans-serif')
+    canvas.draw_text('Lives: ', (20, 40), 25, 'White', 'sans-serif')
+    canvas.draw_text('Score: ' + str(score), (WIDTH - 150 , 40), 25, 'White', 'sans-serif')
 
     # Draws ships instead of number for lives
     for i in range(num_lives):
@@ -284,8 +289,13 @@ def rock_spawner():
     global a_rock, rock_group # game_started
     if game_started:
         while len(rock_group) < 10:
-            a_rock = Sprite([random.randrange(0, 801), random.randrange(0, 601)], [random.randrange(-2, 3), random.randrange(-2, 3)], random.randrange(-1, 2), random.randrange(-1, 2), asteroid_image, asteroid_info)
-            rock_group.add(a_rock)
+            rock_pos = [random.randrange(0, WIDTH), random.randrange(0, HEIGHT)]
+            #rock_vel = 
+            if dist(my_ship.pos, rock_pos) > my_ship.radius + asteroid_info.radius + 100:
+                difficulty = (0.5 + 0.5 * score // 100)
+                a_rock = Sprite(rock_pos, [difficulty * random.randrange(-1, 2), difficulty * random.randrange(-1, 2)], random.randrange(-1, 2), random.randrange(-1, 2), asteroid_image, asteroid_info)
+                print a_rock.vel
+                rock_group.add(a_rock)
 
         
 # key down handler
@@ -341,7 +351,6 @@ def reset_game():
 def click(pos):
     global game_started
     game_started = True
-    print 'Game should start'
     reset_game()
         
 # initialize frame
